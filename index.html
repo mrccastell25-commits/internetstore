@@ -3919,22 +3919,38 @@ body.firebase-banner-active .hero-banner {
     </div>
   </div>
   <div class="retro-tv-wrapper hidden" id="retro-tv-wrapper">
-    <div class="retro-tv-body">
-      <div class="retro-tv-screen" id="tv-screen">
-        <div class="retro-tv-channel-img" id="tv-channel-img"></div>
-        <canvas class="retro-tv-static" id="tv-static-canvas"></canvas>
-        <div class="retro-tv-scanlines"></div>
-        <div class="retro-tv-glare"></div>
-        <div class="retro-tv-ticker"><span class="retro-tv-ticker-text" id="tv-ticker-text"></span></div>
-        <div class="retro-tv-badge" id="tv-channel-badge">CH 01</div>
+    <div class="retro-tv">
+      <div class="tv-cabinet">
+        <div class="tv-screen-housing">
+          <div class="tv-screen" id="tv-screen">
+            <canvas class="tv-static-canvas" id="tv-static-canvas"></canvas>
+            <div class="tv-channel-img" id="tv-channel-img"></div>
+            <div class="tv-scanlines"></div>
+            <div class="tv-glare"></div>
+            <div class="tv-channel-badge" id="tv-channel-badge">CH 01</div>
+            <div class="tv-ticker" id="tv-ticker">
+              <span id="tv-ticker-text"></span>
+            </div>
+          </div>
+        </div>
+        <div class="tv-controls">
+          <div class="tv-brand">📺</div>
+          <button class="tv-btn tv-btn-power" id="tv-btn-power" title="Power">⏻</button>
+          <div class="tv-btn-group">
+            <button class="tv-btn tv-btn-ch" id="tv-btn-ch-up" title="Canal anterior">CH▲</button>
+            <button class="tv-btn tv-btn-ch" id="tv-btn-ch-dn" title="Próximo canal">CH▼</button>
+          </div>
+          <div class="tv-knob-row">
+            <div class="tv-knob" id="tv-knob"></div>
+          </div>
+        </div>
       </div>
-      <div class="retro-tv-controls tv-controls">
-        <button class="retro-tv-btn" id="tv-btn-power" title="Ligar/Desligar">&#9673;</button>
-        <div class="retro-tv-knob" id="tv-knob"></div>
-        <button class="retro-tv-btn" id="tv-btn-ch-up" title="Canal anterior">&#9650;</button>
-        <button class="retro-tv-btn" id="tv-btn-ch-dn" title="Próximo canal">&#9660;</button>
+      <div class="tv-stand">
+        <div class="tv-stand-neck"></div>
+        <div class="tv-stand-foot"></div>
       </div>
     </div>
+    <div class="tv-caption" id="tv-caption">Clique para assistir</div>
   </div>
   <div class="hero-gradient-bottom"></div>
 </header>
