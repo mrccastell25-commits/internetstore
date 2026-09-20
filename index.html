@@ -3822,6 +3822,30 @@ body.firebase-banner-active .hero-banner {
 #fb-monitor-log::-webkit-scrollbar { width: 4px; }
 #fb-monitor-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 
+
+/* ── Botão parar vídeo de abertura ── */
+.btn-stop-hero {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 5px 10px 5px 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.btn-stop-hero::after { content: 'Parar'; }
+.btn-stop-hero:hover {
+  background: rgba(229,9,20,0.7);
+  border-color: #e50914;
+}
+.btn-stop-hero.hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -3859,9 +3883,9 @@ body.firebase-banner-active .hero-banner {
       <span class="radio-eq-mini" id="radio-eq-mini"><span></span><span></span><span></span><span></span></span>
       <span class="radio-btn-label">Rádio</span>
     </button>
-    <div class="profile-avatar">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="Perfil">
-    </div>
+    <button id="btn-stop-hero" class="btn-stop-hero hidden" title="Parar vídeo de abertura" aria-label="Parar vídeo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+    </button>
   </div>
 </nav>
 
@@ -4150,7 +4174,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   filterAndRenderRows();
   loadYoutubeIFrameAPI();
-  initHeroEmbed();
 
   // Rádio
   const stations = sharedSettings.radioStations || [];
@@ -5067,86 +5090,124 @@ function initRetroTV() {
   _retroTVDestroy=()=>{clearTimeout(autoTimer);tvAbort.abort();tvResumeAutoChannel=null;};
 }
 
+// HERO EMBED — IIFE fiel ao original (executa imediatamente, registra listeners antes do render)
 // ============================================================
-// HERO EMBED (FIEL AO ORIGINAL)
-// ============================================================
-function initHeroEmbed() {
-  const heroBg=document.getElementById('hero-bg-image');
-  const heroCover=document.getElementById('hero-bg-cover');
-  const heroOverlay=document.getElementById('hero-overlay');
-  const heroEmbed=document.getElementById('hero-video-embed');
-  const heroIframe=document.getElementById('hero-video-iframe');
-  const embedClose=document.getElementById('hero-embed-close');
-  const heroBanner=document.getElementById('hero-banner');
-  if(!heroEmbed||!heroIframe||!embedClose||!heroBg)return;
+(function() {
+  // Precisa do DOM pronto para getElementById funcionar
+  document.addEventListener('DOMContentLoaded', function initHeroEmbed() {
+  const heroBg     = document.getElementById('hero-bg-image');
+  const heroCover  = document.getElementById('hero-bg-cover');
+  const heroOverlay= document.getElementById('hero-overlay');
+  const heroEmbed  = document.getElementById('hero-video-embed');
+  const heroIframe = document.getElementById('hero-video-iframe');
+  const embedClose = document.getElementById('hero-embed-close');
+  const heroBanner = document.getElementById('hero-banner');
+  const stopHeroBtn= document.getElementById('btn-stop-hero');
+  if (!heroEmbed || !heroIframe || !embedClose || !heroBg) return;
 
-  function extractYouTubeIdLocal(url){if(!url)return null;const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);return m?m[1]:null;}
-  let fadeOutTimer=null;
-
-  function openHeroEmbed(videoId){
-    pauseBgMusic();clearTimeout(fadeOutTimer);
-    heroEmbed.classList.remove('hidden','embed-fadeout','embed-visible');
-    heroEmbed.offsetHeight;
-    heroIframe.src=`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
-    heroBg.classList.add('has-embed-video');
-    if(heroOverlay)heroOverlay.style.background='linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)';
-    requestAnimationFrame(()=>{heroEmbed.classList.add('embed-visible');});
+  function extractId(url) {
+    if (!url) return null;
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
   }
 
-  function closeHeroEmbed(){
-    if(heroEmbed.classList.contains('hidden'))return;
+  let fadeOutTimer = null;
+
+  function openHeroEmbed(videoId) {
+    pauseBgMusic();
     clearTimeout(fadeOutTimer);
-    heroIframe.src='';
+    heroEmbed.classList.remove('hidden', 'embed-fadeout', 'embed-visible');
+    heroEmbed.offsetHeight; // force reflow
+    heroIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+    heroBg.classList.add('has-embed-video');
+    if (heroOverlay) heroOverlay.style.background =
+      'linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)';
+    requestAnimationFrame(() => { heroEmbed.classList.add('embed-visible'); });
+    if (stopHeroBtn) stopHeroBtn.classList.remove('hidden');
+  }
+
+  // immediate=true: corta áudio na hora (ao abrir outro vídeo)
+  // sem argumento ou false: fade-out suave (fim natural ou botão X)
+  function closeHeroEmbed(immediate) {
+    if (heroEmbed.classList.contains('hidden')) return;
+    clearTimeout(fadeOutTimer);
+    heroIframe.src = '';                          // corta áudio imediatamente
     heroEmbed.classList.remove('embed-visible');
     heroEmbed.classList.add('embed-fadeout');
-    heroBg.classList.remove('has-embed-video');
-    if(heroOverlay)heroOverlay.style.background='';
-    fadeOutTimer=setTimeout(()=>{heroEmbed.classList.remove('embed-fadeout');heroEmbed.classList.add('hidden');},1050);
+    heroBg.classList.remove('has-embed-video');   // restaura imagem de fundo completa
+    if (heroOverlay) heroOverlay.style.background = '';
+    if (stopHeroBtn) stopHeroBtn.classList.add('hidden');
+    fadeOutTimer = setTimeout(() => {
+      heroEmbed.classList.remove('embed-fadeout');
+      heroEmbed.classList.add('hidden');
+    }, 1050);
   }
 
-  window.closeHeroEmbedIfOpen=()=>closeHeroEmbed();
+  // Exposto globalmente: openPlayerModal chama ao abrir qualquer vídeo
+  window.closeHeroEmbedIfOpen = function() { closeHeroEmbed(true); };
 
-  window.openHeroEmbedForFeatured=()=>{
-    if(isMobileViewport())return;
-    if(heroVideoPlayedOnce)return;
-    heroVideoPlayedOnce=true;
-    const featured=allVideos.find(v=>v.featured&&v.title)||allVideos.find(v=>v.title);
-    if(!featured)return;
-    const videoId=extractYouTubeIdLocal(featured.url||'');
-    if(videoId)openHeroEmbed(videoId);
+  // Dispara o autoplay do featured na primeira carga (uma vez por sessão, só desktop)
+  window.openHeroEmbedForFeatured = function() {
+    if (typeof isMobileViewport === 'function' && isMobileViewport()) return;
+    if (heroVideoPlayedOnce) return;
+    heroVideoPlayedOnce = true;
+    const featured = (typeof allVideos !== 'undefined')
+      ? (allVideos.find(v => v.featured && v.title) || allVideos.find(v => v.title))
+      : null;
+    if (!featured) return;
+    // usa youtubeUrl primeiro (campo do original), depois url genérica
+    const videoId = extractId(featured.youtubeUrl || featured.url || '');
+    if (videoId) openHeroEmbed(videoId);
   };
 
-  embedClose.addEventListener('click',closeHeroEmbed);
+  // Botão X: fecha com fade suave
+  embedClose.addEventListener('click', () => closeHeroEmbed(false));
 
-  window.addEventListener('message',e=>{
-    if(!e.data)return;
-    try{
-      const data=typeof e.data==='string'?JSON.parse(e.data):e.data;
-      if(!data)return;
-      if(data.event==='onStateChange'&&data.info===0)closeHeroEmbed();
-      if(data.event==='onReady')heroIframe.contentWindow.postMessage(JSON.stringify({event:'listening'}),'*');
-    }catch(_){}
+  // Botão parar (navbar): fecha o vídeo de abertura
+  if (stopHeroBtn) stopHeroBtn.addEventListener('click', () => closeHeroEmbed(false));
+
+  // Detecta fim do vídeo via postMessage da YouTube IFrame API
+  window.addEventListener('message', function(e) {
+    if (!e.data) return;
+    try {
+      const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+      if (!data) return;
+      if (data.event === 'onStateChange' && data.info === 0) closeHeroEmbed(false); // ended
+      if (data.event === 'onReady') {
+        heroIframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+      }
+    } catch (_) {}
   });
 
-  function onScroll(){
-    if(!heroBanner||heroBanner.classList.contains('hidden'))return;
-    const rect=heroBanner.getBoundingClientRect();
-    const visible=rect.bottom>heroBanner.offsetHeight*0.2;
-    heroBg.classList.toggle('hero-bg-hidden',!visible);
-    if(heroCover)heroCover.classList.toggle('hero-bg-hidden',!visible);
-    if(heroOverlay)heroOverlay.classList.toggle('hero-bg-hidden',!visible);
-    heroEmbed.classList.toggle('hero-bg-hidden',!visible);
+  // Scroll: oculta/mostra fundo fixo quando o hero sair da viewport
+  function onScroll() {
+    if (!heroBanner) return;
+    if (heroBanner.classList.contains('hidden') ||
+        getComputedStyle(heroBanner).display === 'none') return;
+    const rect    = heroBanner.getBoundingClientRect();
+    const visible = rect.bottom > heroBanner.offsetHeight * 0.2;
+    heroBg.classList.toggle('hero-bg-hidden', !visible);
+    if (heroCover)   heroCover.classList.toggle('hero-bg-hidden', !visible);
+    if (heroOverlay) heroOverlay.classList.toggle('hero-bg-hidden', !visible);
+    heroEmbed.classList.toggle('hero-bg-hidden', !visible);
   }
-  window.addEventListener('scroll',onScroll,{passive:true});
+  window.addEventListener('scroll', onScroll, { passive: true });
 
-  const observer=new MutationObserver(()=>{
-    if(!heroBanner.classList.contains('hidden')&&getComputedStyle(heroBanner).display!=='none'){
-      onScroll();observer.disconnect();
+  // Garante visibilidade assim que o banner aparecer no DOM
+  const visibilityObserver = new MutationObserver(function() {
+    if (!heroBanner.classList.contains('hidden') &&
+        getComputedStyle(heroBanner).display !== 'none') {
+      onScroll();
+      visibilityObserver.disconnect();
     }
   });
-  observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+  visibilityObserver.observe(document.documentElement, {
+    childList: true, subtree: true, attributes: true,
+    attributeFilter: ['class', 'style']
+  });
   onScroll();
-}
+  }); // end DOMContentLoaded
+})();
 
 // ============================================================
 // EXTRACT YOUTUBE ID
