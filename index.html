@@ -3883,7 +3883,7 @@ body.firebase-banner-active .hero-banner {
       <span class="radio-eq-mini" id="radio-eq-mini"><span></span><span></span><span></span><span></span></span>
       <span class="radio-btn-label">Rádio</span>
     </button>
-    <button id="btn-stop-hero" class="btn-stop-hero hidden" title="Parar vídeo de abertura" aria-label="Parar vídeo">
+<button id="btn-stop-hero" class="btn-stop-hero hidden" title="Parar vídeo de abertura" aria-label="Parar vídeo">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
     </button>
   </div>
@@ -5092,100 +5092,87 @@ function initRetroTV() {
 
 // HERO EMBED — IIFE fiel ao original (executa imediatamente, registra listeners antes do render)
 // ============================================================
-(function() {
-  // Precisa do DOM pronto para getElementById funcionar
-  document.addEventListener('DOMContentLoaded', function initHeroEmbed() {
-  const heroBg     = document.getElementById('hero-bg-image');
-  const heroCover  = document.getElementById('hero-bg-cover');
-  const heroOverlay= document.getElementById('hero-overlay');
-  const heroEmbed  = document.getElementById('hero-video-embed');
-  const heroIframe = document.getElementById('hero-video-iframe');
-  const embedClose = document.getElementById('hero-embed-close');
-  const heroBanner = document.getElementById('hero-banner');
-  const stopHeroBtn= document.getElementById('btn-stop-hero');
+(function initHeroEmbed() {
+  var heroBg      = document.getElementById('hero-bg-image');
+  var heroCover   = document.getElementById('hero-bg-cover');
+  var heroOverlay = document.getElementById('hero-overlay');
+  var heroEmbed   = document.getElementById('hero-video-embed');
+  var heroIframe  = document.getElementById('hero-video-iframe');
+  var embedClose  = document.getElementById('hero-embed-close');
+  var heroBanner  = document.getElementById('hero-banner');
+  var stopBtn     = document.getElementById('btn-stop-hero');
+
   if (!heroEmbed || !heroIframe || !embedClose || !heroBg) return;
 
-  function extractId(url) {
+  function extractYTId(url) {
     if (!url) return null;
-    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+    var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
     return m ? m[1] : null;
   }
 
-  let fadeOutTimer = null;
+  var fadeOutTimer = null;
 
   function openHeroEmbed(videoId) {
     pauseBgMusic();
     clearTimeout(fadeOutTimer);
     heroEmbed.classList.remove('hidden', 'embed-fadeout', 'embed-visible');
-    heroEmbed.offsetHeight; // force reflow
-    heroIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+    heroEmbed.offsetHeight;
+    heroIframe.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1';
     heroBg.classList.add('has-embed-video');
-    if (heroOverlay) heroOverlay.style.background =
-      'linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)';
-    requestAnimationFrame(() => { heroEmbed.classList.add('embed-visible'); });
-    if (stopHeroBtn) stopHeroBtn.classList.remove('hidden');
+    if (heroOverlay) heroOverlay.style.background = 'linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 35%, transparent 55%)';
+    requestAnimationFrame(function() { heroEmbed.classList.add('embed-visible'); });
+    if (stopBtn) stopBtn.classList.remove('hidden');
   }
 
-  // immediate=true: corta áudio na hora (ao abrir outro vídeo)
-  // sem argumento ou false: fade-out suave (fim natural ou botão X)
   function closeHeroEmbed(immediate) {
     if (heroEmbed.classList.contains('hidden')) return;
     clearTimeout(fadeOutTimer);
-    heroIframe.src = '';                          // corta áudio imediatamente
+    heroIframe.src = '';
     heroEmbed.classList.remove('embed-visible');
     heroEmbed.classList.add('embed-fadeout');
-    heroBg.classList.remove('has-embed-video');   // restaura imagem de fundo completa
+    heroBg.classList.remove('has-embed-video');
     if (heroOverlay) heroOverlay.style.background = '';
-    if (stopHeroBtn) stopHeroBtn.classList.add('hidden');
-    fadeOutTimer = setTimeout(() => {
+    if (stopBtn) stopBtn.classList.add('hidden');
+    fadeOutTimer = setTimeout(function() {
       heroEmbed.classList.remove('embed-fadeout');
       heroEmbed.classList.add('hidden');
     }, 1050);
   }
 
-  // Exposto globalmente: openPlayerModal chama ao abrir qualquer vídeo
   window.closeHeroEmbedIfOpen = function() { closeHeroEmbed(true); };
 
-  // Dispara o autoplay do featured na primeira carga (uma vez por sessão, só desktop)
   window.openHeroEmbedForFeatured = function() {
     if (typeof isMobileViewport === 'function' && isMobileViewport()) return;
     if (heroVideoPlayedOnce) return;
     heroVideoPlayedOnce = true;
-    const featured = (typeof allVideos !== 'undefined')
-      ? (allVideos.find(v => v.featured && v.title) || allVideos.find(v => v.title))
+    var featured = (typeof allVideos !== 'undefined')
+      ? (allVideos.find(function(v){ return v.featured && v.title; }) || allVideos.find(function(v){ return !!v.title; }))
       : null;
     if (!featured) return;
-    // usa youtubeUrl primeiro (campo do original), depois url genérica
-    const videoId = extractId(featured.youtubeUrl || featured.url || '');
+    var videoId = extractYTId(featured.youtubeUrl || featured.url || '');
     if (videoId) openHeroEmbed(videoId);
   };
 
-  // Botão X: fecha com fade suave
-  embedClose.addEventListener('click', () => closeHeroEmbed(false));
+  embedClose.addEventListener('click', function() { closeHeroEmbed(false); });
+  if (stopBtn) stopBtn.addEventListener('click', function() { closeHeroEmbed(false); });
 
-  // Botão parar (navbar): fecha o vídeo de abertura
-  if (stopHeroBtn) stopHeroBtn.addEventListener('click', () => closeHeroEmbed(false));
-
-  // Detecta fim do vídeo via postMessage da YouTube IFrame API
   window.addEventListener('message', function(e) {
     if (!e.data) return;
     try {
-      const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+      var data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
       if (!data) return;
-      if (data.event === 'onStateChange' && data.info === 0) closeHeroEmbed(false); // ended
+      if (data.event === 'onStateChange' && data.info === 0) closeHeroEmbed(false);
       if (data.event === 'onReady') {
         heroIframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
       }
-    } catch (_) {}
+    } catch(ex) {}
   });
 
-  // Scroll: oculta/mostra fundo fixo quando o hero sair da viewport
   function onScroll() {
     if (!heroBanner) return;
-    if (heroBanner.classList.contains('hidden') ||
-        getComputedStyle(heroBanner).display === 'none') return;
-    const rect    = heroBanner.getBoundingClientRect();
-    const visible = rect.bottom > heroBanner.offsetHeight * 0.2;
+    if (heroBanner.classList.contains('hidden') || getComputedStyle(heroBanner).display === 'none') return;
+    var rect = heroBanner.getBoundingClientRect();
+    var visible = rect.bottom > heroBanner.offsetHeight * 0.2;
     heroBg.classList.toggle('hero-bg-hidden', !visible);
     if (heroCover)   heroCover.classList.toggle('hero-bg-hidden', !visible);
     if (heroOverlay) heroOverlay.classList.toggle('hero-bg-hidden', !visible);
@@ -5193,21 +5180,18 @@ function initRetroTV() {
   }
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // Garante visibilidade assim que o banner aparecer no DOM
-  const visibilityObserver = new MutationObserver(function() {
-    if (!heroBanner.classList.contains('hidden') &&
-        getComputedStyle(heroBanner).display !== 'none') {
+  var visibilityObserver = new MutationObserver(function() {
+    if (!heroBanner.classList.contains('hidden') && getComputedStyle(heroBanner).display !== 'none') {
       onScroll();
       visibilityObserver.disconnect();
     }
   });
   visibilityObserver.observe(document.documentElement, {
-    childList: true, subtree: true, attributes: true,
-    attributeFilter: ['class', 'style']
+    childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style']
   });
   onScroll();
-  }); // end DOMContentLoaded
 })();
+
 
 // ============================================================
 // EXTRACT YOUTUBE ID
