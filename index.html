@@ -478,6 +478,189 @@ body {
     border-color: var(--netflix-red);
 }
 
+/* ── Grade de Vídeos: botão navbar (só desktop) ── */
+.btn-videogrid-open {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    color: var(--text-color);
+    padding: 5px 13px 5px 10px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    white-space: nowrap;
+}
+.btn-videogrid-open:hover {
+    background: rgba(229,9,20,0.2);
+    border-color: var(--netflix-red);
+}
+@media (max-width: 860px) {
+    .btn-videogrid-open { display: none; }
+}
+
+/* ── Modal Grade 3x3 ── */
+.videogrid-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: rgba(0,0,0,0.97);
+    flex-direction: column;
+}
+.videogrid-modal.open {
+    display: flex;
+}
+.videogrid-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+.videogrid-modal-title {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.videogrid-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: rgba(229,9,20,0.2);
+    border: 1px solid rgba(229,9,20,0.5);
+    color: #e50914;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.videogrid-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.btn-videogrid-reshuffle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-videogrid-reshuffle:hover {
+    background: rgba(255,255,255,0.15);
+}
+.btn-videogrid-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s, background 0.2s;
+}
+.btn-videogrid-close:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+.videogrid-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 6px 24px;
+    flex-shrink: 0;
+}
+.videogrid-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    padding: 4px 4px 8px;
+    flex: 1;
+    min-height: 0;
+}
+.videogrid-cell {
+    position: relative;
+    background: #000;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.videogrid-cell iframe {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: none;
+    pointer-events: none; /* impede interação com iframe, som via YT API */
+    transition: opacity 0.3s;
+}
+.videogrid-cell.focused {
+    outline: 3px solid var(--netflix-red);
+    outline-offset: -3px;
+    z-index: 2;
+}
+.videogrid-cell .cell-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    transition: background 0.2s;
+    display: flex;
+    align-items: flex-end;
+    padding: 8px;
+    pointer-events: none;
+}
+.videogrid-cell:not(.focused) .cell-overlay {
+    background: rgba(0,0,0,0.35);
+}
+.videogrid-cell .cell-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+.videogrid-cell:hover .cell-title,
+.videogrid-cell.focused .cell-title {
+    opacity: 1;
+}
+.videogrid-cell .cell-mute-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.videogrid-cell.focused .cell-mute-icon {
+    background: rgba(229,9,20,0.8);
+}
+
 /* ── Web Rádio: botão navbar ── */
 .btn-radio-open {
     display: flex;
@@ -3879,6 +4062,10 @@ body.firebase-banner-active .hero-banner {
       </button>
       <input type="text" id="search-input" class="search-input" placeholder="Títulos, canais ou gêneros...">
     </div>
+    <button class="btn-videogrid-open" id="btn-videogrid-open" title="Grade de Vídeos (desktop)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Grade</span>
+    </button>
     <button class="btn-radio-open hidden" id="btn-radio-open" title="Web Rádio">
       <span class="radio-eq-mini" id="radio-eq-mini"><span></span><span></span><span></span><span></span></span>
       <span class="radio-btn-label">Rádio</span>
@@ -4116,6 +4303,28 @@ body.firebase-banner-active .hero-banner {
     </div>
     <div class="series-episodes-list" id="series-episodes-list"></div>
   </div>
+</div>
+
+<!-- Modal Grade 3x3 de Vídeos -->
+<div id="videogrid-modal" class="videogrid-modal">
+  <div class="videogrid-modal-header">
+    <div class="videogrid-modal-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Grade de Vídeos
+      <span class="videogrid-badge">Filmes · Desenhos · Videoclips</span>
+    </div>
+    <div class="videogrid-modal-actions">
+      <button class="btn-videogrid-reshuffle" id="btn-videogrid-reshuffle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Novo Sorteio
+      </button>
+      <button class="btn-videogrid-close" id="btn-videogrid-close" title="Fechar grade">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="videogrid-hint">Passe o mouse sobre uma célula (ou clique) para ativar o som dela — as demais ficam mudas.</div>
+  <div class="videogrid-grid" id="videogrid-grid"></div>
 </div>
 
 <footer class="netflix-footer">
@@ -5365,6 +5574,209 @@ function showToast(message, options={}) {
   clearTimeout(toastHideTimeout);
   toastHideTimeout=setTimeout(()=>toast.classList.remove('show'),duration);
 }
+
+// ============================================================
+// GRADE 3×3 DE VÍDEOS
+// ============================================================
+(function initVideoGrid() {
+  // Categorias alvo: category direto OU displayCategory
+  const TARGET_CATS = new Set(['filmes', 'desenhos', 'video_clips', 'videoclips']);
+
+  function getEligibleVideos() {
+    const pool = (typeof allVideos !== 'undefined' ? allVideos : []).filter(v => {
+      const cat = (v.category || '').toLowerCase();
+      const dcat = (v.displayCategory || '').toLowerCase();
+      const inTarget = TARGET_CATS.has(cat) || TARGET_CATS.has(dcat);
+      return inTarget && v.videoId;
+    });
+    return pool;
+  }
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pick9(pool) {
+    return shuffle(pool).slice(0, 9);
+  }
+
+  let gridPlayers = []; // {player: YT.Player, videoId, cell}
+  let focusedIndex = -1;
+  let gridOpen = false;
+  let pendingGrid = null; // videos to render after YT API ready
+
+  function buildGrid(videos) {
+    const grid = document.getElementById('videogrid-grid');
+    if (!grid) return;
+    // Destroy old players
+    gridPlayers.forEach(p => {
+      try { if (p.player && p.player.destroy) p.player.destroy(); } catch(e) {}
+    });
+    gridPlayers = [];
+    focusedIndex = -1;
+    grid.innerHTML = '';
+
+    videos.forEach((v, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'videogrid-cell';
+      cell.innerHTML = `
+        <div id="vg-player-${i}"></div>
+        <div class="cell-overlay">
+          <span class="cell-title">${escapeHtml(v.title || '')}</span>
+        </div>
+        <div class="cell-mute-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+          </svg>
+        </div>`;
+
+      cell.addEventListener('mouseenter', () => focusCell(i));
+      cell.addEventListener('click', () => focusCell(i));
+
+      grid.appendChild(cell);
+
+      const playerObj = { player: null, videoId: v.videoId, cell, index: i };
+      gridPlayers.push(playerObj);
+
+      // Create YT player
+      if (typeof YT !== 'undefined' && YT.Player) {
+        createGridPlayer(playerObj, i);
+      }
+    });
+
+    // Focus first cell by default
+    setTimeout(() => focusCell(0), 800);
+  }
+
+  function createGridPlayer(playerObj, i) {
+    playerObj.player = new YT.Player(`vg-player-${i}`, {
+      videoId: playerObj.videoId,
+      playerVars: {
+        autoplay: 1,
+        mute: 1,
+        loop: 1,
+        playlist: playerObj.videoId,
+        rel: 0,
+        modestbranding: 1,
+        controls: 0,
+        disablekb: 1,
+      },
+      events: {
+        onReady: function(e) {
+          e.target.setVolume(0);
+          e.target.mute();
+          e.target.playVideo();
+          // Apply focus if this is the focused cell
+          if (focusedIndex === i) {
+            e.target.unMute();
+            e.target.setVolume(80);
+          }
+        }
+      }
+    });
+  }
+
+  function focusCell(idx) {
+    if (focusedIndex === idx) return;
+    focusedIndex = idx;
+
+    gridPlayers.forEach((p, i) => {
+      const isFocused = (i === idx);
+      if (p.cell) {
+        p.cell.classList.toggle('focused', isFocused);
+        // Update mute icon visibility
+        const muteIcon = p.cell.querySelector('.cell-mute-icon svg path');
+        if (muteIcon) {
+          muteIcon.setAttribute('d', isFocused
+            ? 'M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07'
+            : 'M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6');
+        }
+      }
+      if (p.player && typeof p.player.setVolume === 'function') {
+        try {
+          if (isFocused) {
+            p.player.unMute();
+            p.player.setVolume(80);
+          } else {
+            p.player.mute();
+            p.player.setVolume(0);
+          }
+        } catch(e) {}
+      }
+    });
+  }
+
+  function openGrid() {
+    const modal = document.getElementById('videogrid-modal');
+    if (!modal) return;
+    gridOpen = true;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    const pool = getEligibleVideos();
+    if (!pool.length) {
+      document.getElementById('videogrid-grid').innerHTML = '<div style="color:#aaa;padding:40px;text-align:center;grid-column:1/-1">Nenhum vídeo encontrado nas categorias filmes, desenhos ou videoclips.</div>';
+      return;
+    }
+    const videos = pick9(pool);
+
+    if (typeof YT === 'undefined' || !YT.Player) {
+      // YT not ready yet — queue
+      pendingGrid = videos;
+    } else {
+      buildGrid(videos);
+    }
+  }
+
+  function closeGrid() {
+    const modal = document.getElementById('videogrid-modal');
+    if (!modal) return;
+    gridOpen = false;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    // Destroy all players to stop audio/video
+    gridPlayers.forEach(p => {
+      try { if (p.player && p.player.destroy) p.player.destroy(); } catch(e) {}
+    });
+    gridPlayers = [];
+    focusedIndex = -1;
+    const grid = document.getElementById('videogrid-grid');
+    if (grid) grid.innerHTML = '';
+  }
+
+  function reshuffle() {
+    const pool = getEligibleVideos();
+    if (!pool.length) return;
+    const videos = pick9(pool);
+    buildGrid(videos);
+  }
+
+  // Hook into the YT API ready callback — extend onYouTubeIframeAPIReady
+  const _prevOnYT = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = function() {
+    if (_prevOnYT) _prevOnYT();
+    // If grid was opened before API was ready, build now
+    if (gridOpen && pendingGrid) {
+      buildGrid(pendingGrid);
+      pendingGrid = null;
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-videogrid-open')?.addEventListener('click', openGrid);
+    document.getElementById('btn-videogrid-close')?.addEventListener('click', closeGrid);
+    document.getElementById('btn-videogrid-reshuffle')?.addEventListener('click', reshuffle);
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && gridOpen) closeGrid();
+    });
+  });
+})();
 
 // ============================================================
 // EVENT LISTENERS
