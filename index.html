@@ -5615,10 +5615,12 @@ function showToast(message, options={}) {
   }
 
   // Estado
-  let gridPlayers  = [];   // [{player, videoId, title, cell, idx}]
+  let gridPlayers   = [];   // [{player, videoId, title, cell, idx}]
   let poolRemaining = [];
-  let gridOpen     = false;
+  let gridOpen      = false;
   let pendingVideos = null;
+  let activeSoundIdx = -1;  // índice com som ativo (não apagar durante fullscreen)
+  let inFullscreen   = false;
   const BLOCKED_CODES = [100, 101, 150];
 
   // ── Pool de reposição ────────────────────────────────────
@@ -5649,29 +5651,39 @@ function showToast(message, options={}) {
     cell.addEventListener('mouseenter', () => setSound(idx, true));
     cell.addEventListener('mouseleave', () => setSound(idx, false));
 
-    // Fullscreen: habilita pointer-events temporariamente só para o pedido,
-    // mantém o som ativo durante e depois do fullscreen
+    // Fullscreen
     cell.querySelector('.cell-btn-fs').addEventListener('click', e => {
       e.stopPropagation();
       const iframe = cell.querySelector('iframe');
       if (!iframe) return;
 
-      // Garantir som ativo nesta célula durante fullscreen
-      setSound(idx, true);
-
       const req = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen;
-      if (req) {
-        iframe.style.pointerEvents = 'auto';
-        req.call(iframe).catch(() => {});
-        // Ao sair do fullscreen, restaurar pointer-events e manter som se mouse ainda estiver aqui
-        const onFsChange = () => {
+      if (!req) return;
+
+      // Ativar som nesta célula antes de entrar em fullscreen
+      activeSoundIdx = idx;
+      const p = gridPlayers[idx];
+      if (p && p.player) { try { p.player.unMute(); p.player.setVolume(90); } catch(e) {} }
+      p.cell.classList.add('focused');
+
+      inFullscreen = true;
+      iframe.style.pointerEvents = 'auto';
+      req.call(iframe).catch(() => {});
+
+      const onFsChange = () => {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (!isFs) {
+          // Saiu do fullscreen
+          inFullscreen = false;
           iframe.style.pointerEvents = 'none';
           document.removeEventListener('fullscreenchange', onFsChange);
           document.removeEventListener('webkitfullscreenchange', onFsChange);
-        };
-        document.addEventListener('fullscreenchange', onFsChange);
-        document.addEventListener('webkitfullscreenchange', onFsChange);
-      }
+          // Manter som ativo na célula que estava em fullscreen
+          if (p && p.player) { try { p.player.unMute(); p.player.setVolume(90); } catch(e) {} }
+        }
+      };
+      document.addEventListener('fullscreenchange', onFsChange);
+      document.addEventListener('webkitfullscreenchange', onFsChange);
     });
 
     return cell;
@@ -5679,11 +5691,23 @@ function showToast(message, options={}) {
 
   // ── Som ─────────────────────────────────────────────────
   function setSound(idx, on) {
+    // Se estiver em fullscreen, ignorar eventos de mouse (não cortar o som)
+    if (inFullscreen) return;
     const p = gridPlayers[idx];
     if (!p || !p.player) return;
     try {
-      if (on) { p.player.unMute(); p.player.setVolume(90); p.cell.classList.add('focused'); }
-      else     { p.player.mute();  p.player.setVolume(0);  p.cell.classList.remove('focused'); }
+      if (on) {
+        // Mutar qualquer outro que estava ativo
+        if (activeSoundIdx !== -1 && activeSoundIdx !== idx) {
+          const prev = gridPlayers[activeSoundIdx];
+          if (prev && prev.player) { prev.player.mute(); prev.player.setVolume(0); prev.cell.classList.remove('focused'); }
+        }
+        activeSoundIdx = idx;
+        p.player.unMute(); p.player.setVolume(90); p.cell.classList.add('focused');
+      } else {
+        if (activeSoundIdx === idx) activeSoundIdx = -1;
+        p.player.mute(); p.player.setVolume(0); p.cell.classList.remove('focused');
+      }
     } catch(e) {}
   }
 
