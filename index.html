@@ -5632,7 +5632,28 @@ function showToast(message, options={}) {
   let muteTimer      = null;  // debounce para não cortar som no gap entre células
   const BLOCKED_CODES = [100, 101, 150];
 
-  // ── Pool de reposição ────────────────────────────────────
+  // ── Listener global de fullscreen (cobre saída automática pelo browser) ──
+  function onGlobalFsChange() {
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (!isFs && inFullscreen) {
+      inFullscreen = false;
+      // Restaurar pointer-events em todos os iframes
+      gridPlayers.forEach(p => {
+        const iframe = p.cell && p.cell.querySelector('iframe');
+        if (iframe) iframe.style.pointerEvents = 'none';
+      });
+      // Restaurar som no slot que estava ativo
+      if (activeSoundIdx !== -1) {
+        const p = gridPlayers[activeSoundIdx];
+        if (p) {
+          applyVolume(p, true);
+          p.cell.classList.add('focused');
+        }
+      }
+    }
+  }
+  document.addEventListener('fullscreenchange', onGlobalFsChange);
+  document.addEventListener('webkitfullscreenchange', onGlobalFsChange);
   function nextFromPool() {
     if (!poolRemaining.length) {
       // Recriar pool excluindo apenas os que estão tocando agora
@@ -5711,26 +5732,10 @@ function showToast(message, options={}) {
       const req = iframe.requestFullscreen || iframe.webkitRequestFullscreen || iframe.mozRequestFullScreen;
       if (!req) return;
 
-      activateSound(idx); // garantir som antes de entrar
+      activateSound(idx);
       inFullscreen = true;
       iframe.style.pointerEvents = 'auto';
       req.call(iframe).catch(() => {});
-
-      const onFsChange = () => {
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        if (!isFs) {
-          inFullscreen = false;
-          iframe.style.pointerEvents = 'none';
-          document.removeEventListener('fullscreenchange', onFsChange);
-          document.removeEventListener('webkitfullscreenchange', onFsChange);
-          // Restaurar som na célula que estava em fullscreen
-          const p = gridPlayers[idx];
-          if (p) { applyVolume(p, true); p.cell.classList.add('focused'); }
-          activeSoundIdx = idx;
-        }
-      };
-      document.addEventListener('fullscreenchange', onFsChange);
-      document.addEventListener('webkitfullscreenchange', onFsChange);
     });
 
     return cell;
